@@ -1,4 +1,4 @@
-const CACHE_NAME = 'drinkme-cache-v51';
+const CACHE_NAME = 'drinkme-cache-v53';
 
 // Assets to cache immediately for offline usability
 const ASSETS_TO_CACHE = [
@@ -12,10 +12,10 @@ const ASSETS_TO_CACHE = [
 
   // UI & Tutorial Images
   './img/brand.png',
-  './img/ProgressPT1.png',
-  './img/SettingsPT1.png',
-  './img/RemPT1.png',
-  './img/HistoryPT1.png',
+  './img/ProgressPT1.PNG',
+  './img/SettingsPT1.PNG',
+  './img/RemPT1.PNG',
+  './img/HistoryPT1.PNG',
 
 
   // External Resources
