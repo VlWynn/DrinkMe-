@@ -1,0 +1,46 @@
+{
+  "name": "Drink Me! Lite Hydration Tracker",
+  "short_name": "Drink Me!",
+  "description": "A fun and interactive app to track your daily hydration, discover water recipes, and build healthy habits.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#8af2c4",
+  "theme_color": "#2a8f78",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "./img/brand.png?v=5",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "./img/brand.png?v=5",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "./img/brand.png?v=5",
+      "type": "image/png",
+      "sizes": "1024x1024",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./img/tip1.PNG",
+      "sizes": "727x822",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mobile View of Hydration Tracker"
+    },
+    {
+      "src": "./img/tip1.PNG",
+      "sizes": "727x822",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Desktop View of Hydration Tracker"
+    }
+  ]
+}

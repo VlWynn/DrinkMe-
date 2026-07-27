@@ -1,0 +1,77 @@
+PRIVACY POLICY FOR DRINK ME! LITE
+
+Last Updated: July 25, 2026
+
+Your privacy is extremely important to us. This Privacy Policy describes how Drink Me! Lite ("we," "our," or "us") handles information when you use our web application, Progressive Web App (PWA), or offline services (collectively, the "Application").
+
+Because Drink Me! Lite is built as a privacy-first, client-side application, we do not collect, transmit, or sell your personal data to remote servers.
+
+1. Information We Do NOT Collect
+
+We do not maintain user accounts, databases, or remote tracking servers. We do not collect or store:
+
+Personal Identifiable Information (PII) such as your name, email address, phone number, or physical address.
+
+Health or medical records.
+
+Location data or GPS coordinates.
+
+Payment card details or financial information.
+
+2. Information Stored Locally on Your Device
+
+To provide a personalized hydration tracking experience, Drink Me! Lite saves your app preferences directly in your browser using standard Local Storage (localStorage).
+
+This locally stored data includes:
+
+Hydration State: Current daily water intake, daily intake goals, last sip logged, and preset container amounts.
+
+Hydration History: Historical daily water totals and goal achievements (up to 30 days) to display your progress charts.
+
+App Preferences: Measurement unit preferences (ML, OZ, or CUPS), notification toggle states, and reminder schedules (frequency, window hours, tone preference).
+
+Feature Access States: Temporary or weekly unlock status for background themes, liquid colors, and notification sound selections.
+
+Control: All local data remains exclusively on your device. You can erase this data at any time by clearing your browser cookies and site data for the Application or clicking "Reset Progress" within the app menu.
+
+3. Web Technologies & External Libraries
+
+Drink Me! Lite utilizes trusted open-source web libraries and Content Delivery Networks (CDNs) to deliver interface elements, fonts, and graph rendering:
+
+Google Fonts: Used to render modern typography (Inter, Dancing Script).
+
+Chart.js: Used to render interactive history graphs completely within your browser client.
+
+Canvas Confetti: Used to display celebratory animations when daily goals are reached.
+
+These CDN requests fetch standard styling and script files directly to your browser. Standard web server access logs (such as IP addresses and User-Agent headers) may be processed by CDN providers according to their respective privacy policies to ensure secure script delivery.
+
+4. Notifications & Service Worker
+
+Drink Me! Lite includes local system notification support using Service Workers (sw.js) and standard Browser Notification APIs:
+
+Local Scheduling: All notification timers and reminder alerts run locally on your device or via local Service Worker events.
+
+No Remote Push Tracking: We do not send your device token or notification subscription details to any external push notification server.
+
+Permissions: Notification permission is strictly opt-in. You may revoke or manage notification access at any time through your web browser or system settings.
+
+5. In-App Advertisements & Sponsorship Features
+
+Drink Me! Lite includes static/simulated ad banners and interactive pass rewards (such as watching a short sponsored countdown to unlock custom visual themes):
+
+These features operate locally within the Application code.
+
+Interactive ad banners do not execute third-party tracking cookies or collect personal profiling data.
+
+6. Children's Privacy
+
+Drink Me! Lite does not knowingly collect personal information from children under the age of 13 (or any users), as all data resides strictly on the end-user's local device.
+
+7. Changes to This Privacy Policy
+
+We may update our Privacy Policy from time to time. Any changes will be posted directly within the Application. We encourage users to review this document periodically.
+
+8. Contact Us
+
+If you have questions, comments, or concerns about this Privacy Policy, please reach out through our official project support channels or repository issue tracker.

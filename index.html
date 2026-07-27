@@ -1,0 +1,2544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Drink Me! Lite | Hydration Tracker</title>
+    
+    <!-- Preconnect Google Fonts for faster load times on Android -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght=700;900&family=Inter:wght=300;400;600;700;900&display=swap" rel="stylesheet">
+
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2a8f78">
+    <link rel="apple-touch-icon" href="./img/brand.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Drink Me!">
+    
+    <style>
+        :root {
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-400: #94a3b8;
+            --slate-500: #64748b;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --slate-800: #1e293b;
+            --slate-900: #0f172a;
+            
+            --blue-50: #eff6ff;
+            --blue-100: #dbeafe;
+            --blue-200: #bfdbfe;
+            --blue-400: #60a5fa;
+            --blue-500: #3b82f6;
+            --blue-600: #2563eb;
+            --blue-700: #1d4ed8;
+
+            --orange-500: #f97316;
+            --orange-600: #ea580c;
+
+            /* Dynamic Theme Variables */
+            --bg-gradient: linear-gradient(135deg, #d2f4ff 0%, #38bdf8 25%, #2a8f78 65%, #0284c7 100%);
+            --water-gradient: linear-gradient(to bottom, #42e6f5 0%, #1593db 60%, #0060ad 100%);
+            --wave-color: %2342e6f5;
+            --wave-back-color: %233bbcdb;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: var(--slate-900);
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            overflow: hidden;
+            transition: background 0.3s ease;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: -10%;
+            left: -10%;
+            width: 120%;
+            height: 70%;
+            background: radial-gradient(ellipse at 35% 15%, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 60%);
+            pointer-events: none;
+            z-index: -2;
+            transform: translateZ(0);
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            background-image: 
+                radial-gradient(circle at 14% 22%, rgba(255, 255, 255, 0.6) 1px, transparent 2px),
+                radial-gradient(circle at 86% 78%, rgba(255, 255, 255, 0.6) 1px, transparent 2px),
+                radial-gradient(circle at 22% 80%, rgba(255, 255, 255, 0.5) 1px, transparent 2px);
+            background-repeat: no-repeat;
+            transform: translateZ(0);
+        }
+
+        .app-viewport {
+            width: 100%;
+            max-width: 460px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Top Bar */
+        .top-header {
+            padding: 16px 20px 8px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .brand-text-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-fancy {
+            font-family: 'Dancing Script', cursive;
+            font-size: 2rem;
+            background: linear-gradient(to bottom, #e88dff 0%, #ff8800 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2));
+            font-weight: 900;
+        }
+
+        .text-blue-500 {
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--blue-500) !important;
+            letter-spacing: -0.5px;
+        }
+
+        .info-btn {
+            background: rgba(255, 255, 255, 0.85);
+            color: var(--blue-600);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+            transition: transform 0.15s ease;
+        }
+
+        .streak-info {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: 900;
+            color: var(--orange-600);
+            background: rgba(255, 255, 255, 0.85);
+            padding: 6px 12px;
+            border-radius: 14px;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .streak-info.visible { opacity: 1; }
+
+        /* Swipeable Container Layout */
+        .swipe-container {
+            flex: 1;
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            margin-bottom: 130px; /* Stops the container above the bottom tab bar */
+        }
+
+        .swipe-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .tab-pane {
+            flex: 0 0 100%;
+            width: 100%;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+            padding: 10px 20px 16px 20px; /* Reduced bottom padding since container now ends above bottom tab bar */
+            overflow-y: auto;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Bottom Tab Bar */
+        .bottom-tab-bar {
+            position: fixed;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 24px);
+            max-width: 430px;
+            height: 64px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 22px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+            z-index: 90;
+        }
+
+        .tab-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            flex: 1;
+            height: 100%;
+            border: none;
+            background: transparent;
+            color: var(--slate-500);
+            font-size: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: color 0.2s ease, transform 0.15s ease;
+            position: relative;
+        }
+
+        .tab-btn.active {
+            color: var(--blue-600);
+        }
+
+        .tab-btn svg {
+            transition: transform 0.2s ease;
+        }
+
+        .tab-btn.active svg {
+            transform: translateY(-2px) scale(1.1);
+        }
+
+        .tab-indicator-badge {
+            position: absolute;
+            top: 8px;
+            right: 22%;
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            display: none;
+        }
+
+        /* Progress Circle */
+        .progress-section {
+            display: flex;
+            justify-content: center;
+            padding: 10px 0;
+            width: 100%;
+            align-self: center;
+        }
+
+        .main-circle {
+            width: 240px;
+            height: 240px;
+            background: rgba(255, 255, 255, 0.35);
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 5px solid rgba(255, 255, 255, 0.75);
+            box-shadow: 0 12px 25px rgba(0, 150, 200, 0.15);
+            transform: translateZ(0) translateY(-10%);
+            will-change: transform;
+        }
+
+        .main-circle::before {
+            content: "";
+            position: absolute;
+            top: 5%;
+            left: 10%;
+            width: 50%;
+            height: 35%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 60%);
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .wave-wrapper {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: var(--water-gradient);
+            transition: height 0.8s ease-out;
+            z-index: 1;
+            will-change: height;
+            transform: translateZ(0);
+        }
+
+        .wave {
+            position: absolute;
+            top: -30px;
+            left: 0;
+            width: 200%;
+            height: 38px;
+            background-repeat: repeat-x;
+            background-size: 50% 100%;
+            animation: wave-move 8s linear infinite;
+            will-change: transform;
+            transform: translate3d(0,0,0);
+        }
+
+        .wave-back {
+            top: -35px;
+            opacity: 0.6;
+            animation: wave-move 12s linear infinite reverse;
+        }
+
+        @keyframes wave-move {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-50%, 0, 0); }
+        }
+
+        .progress-text {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .percentage {
+            font-size: 50px;
+            font-weight: 900;
+            margin: 0;
+            color: var(--slate-800);
+        }
+
+        .stats {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--slate-600);
+            margin-top: -4px;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 25px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: none;
+            z-index: 100;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        #woActive { color: var(--orange-600); }
+        #remActiveBadge { color: var(--blue-600); }
+
+        /* Buttons Grid */
+        .quick-log-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            transform: translateY(-50%);
+        }
+
+        .log-card {
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 20px;
+            padding: 16px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: transform 0.15s ease, background-color 0.15s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .log-card:active { transform: scale(0.96); }
+
+        .log-amount { font-size: 22px; font-weight: 800; color: var(--slate-800); }
+        .log-label { font-size: 13px; font-weight: 700; text-transform: uppercase; color: var(--blue-600); letter-spacing: 1px; }
+
+        .pane-card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        .pane-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .pane-header h3 { margin: 0; font-size: 18px; font-weight: 800; color: var(--slate-800); }
+
+        /* Ad Banners */
+        .ad-banner {
+            background: #ffffff;
+            border: 1.5px dashed var(--slate-400);
+            border-radius: 18px;
+            padding: 12px 14px;
+            position: relative;
+            text-align: left;
+            cursor: pointer;
+            transition: border-color 0.15s ease;
+            transform: translateY(-80%);
+        }
+        
+        
+        .ad-banner:hover { border-color: var(--blue-400); }
+
+
+
+        .ad-banner2 {
+            background: #ffffff;
+            border: 1.5px dashed var(--slate-400);
+            border-radius: 18px;
+            padding: 12px 14px;
+            position: relative;
+            text-align: left;
+            cursor: pointer;
+            transition: border-color 0.15s ease;
+            transform: translateY(0%);
+        }
+
+
+
+
+        .ad-banner2:hover { border-color: var(--blue-400); }
+
+        .ad-label {
+            position: absolute;
+            top: -9px;
+            left: 14px;
+            background: var(--slate-500);
+            color: white;
+            font-size: 8px;
+            font-weight: 900;
+            padding: 2px 6px;
+            border-radius: 5px;
+            letter-spacing: 0.8px;
+        }
+
+        .ad-content { display: flex; align-items: center; gap: 10px; }
+
+        .ad-emoji {
+            font-size: 22px;
+            background: var(--blue-50);
+            padding: 4px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            height: 36px;
+        }
+
+        .ad-title { margin: 0; font-size: 13px; font-weight: 800; color: var(--slate-800); }
+        .ad-text { margin: 2px 0 0 0; font-size: 11px; color: var(--slate-500); line-height: 1.3; }
+
+        /* Form Controls */
+        .input-group { margin-bottom: 16px; }
+        .input-label { 
+            display: block; 
+            font-size: 11px; 
+            font-weight: 800; 
+            color: var(--slate-500); 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .unit-toggle {
+            display: flex;
+            background: var(--slate-100);
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+
+        .unit-btn {
+            flex: 1;
+            border: none;
+            background: none;
+            padding: 8px;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--slate-500);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .unit-btn.active {
+            background: white;
+            color: var(--blue-600);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        input[type="number"], input[type="time"], select {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--slate-50);
+            border: 2px solid var(--slate-200);
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--slate-800);
+            outline: none;
+        }
+
+        .save-btn {
+            width: 100%;
+            background: var(--blue-600);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+            transition: background-color 0.15s ease;
+        }
+
+        .secondary-btn {
+            flex: 1;
+            background: var(--slate-100);
+            color: var(--slate-600);
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .body-profile-btn {
+            background: var(--blue-100);
+            color: var(--blue-600);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        /* Modals (For Popups, Tutorial, Ads, Alerts) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease-out;
+        }
+
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+        .modal-card {
+            background: #ffffff;
+            width: 100%;
+            max-width: 440px;
+            border-radius: 28px;
+            padding: 24px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            transform: translateY(15px);
+            transition: transform 0.2s ease-out;
+            max-height: 90vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .modal-overlay.active .modal-card { transform: translateY(0); }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .modal-header h3 { margin: 0; font-size: 20px; font-weight: 800; color: var(--slate-800); }
+
+        .close-btn { background: none; border: none; color: var(--slate-400); cursor: pointer; padding: 4px; }
+
+        /* Slideshow */
+        .slideshow-container {
+            width: 100%;
+            position: relative;
+            margin: auto;
+            background: rgba(241, 245, 249, 0.6);
+            border-radius: 18px;
+            padding: 15px 10px;
+            border: 1px solid var(--slate-200);
+        }
+        
+        .mySlides { display: none; text-align: center; }
+
+        .slide-graphic { margin-bottom: 12px; display: flex; justify-content: center; align-items: center; }
+
+        .slide-graphic img {
+            max-width: 100%;
+            max-height: 140px;
+            height: auto;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+
+        .prev, .next {
+            cursor: pointer;
+            position: absolute;
+            top: 40%;
+            width: auto;
+            padding: 8px 12px;
+            color: var(--slate-700);
+            font-weight: bold;
+            font-size: 16px;
+            border-radius: 50%;
+            user-select: none;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .next { right: 8px; }
+        .prev { left: 8px; }
+
+        .text {
+            color: var(--slate-800);
+            font-size: 12px;
+            padding: 0 24px;
+            text-align: center;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+
+        .numbertext {
+            color: var(--slate-500);
+            font-size: 10px;
+            position: absolute;
+            top: 8px;
+            left: 10px;
+            font-weight: 800;
+        }
+
+        .slide-dot {
+            cursor: pointer;
+            height: 8px;
+            width: 8px;
+            margin: 0 3px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 50%;
+            display: inline-block;
+            transition: background-color 0.2s ease;
+        }
+
+        .slide-dot.active-slide { background-color: var(--blue-500); }
+
+        .fade { animation-name: fade; animation-duration: 0.3s; }
+        @keyframes fade { from { opacity: .7; } to { opacity: 1; } }
+
+        /* Accordions */
+        .settings-dropdown-box {
+            background: var(--slate-50);
+            border: 1.5px solid var(--slate-200);
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .settings-dropdown-box details summary {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--slate-800);
+            cursor: pointer;
+            user-select: none;
+            outline: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .settings-dropdown-content {
+            margin-top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .legal-doc-content {
+            max-height: 60vh;
+            overflow-y: auto;
+            text-align: left;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--slate-700);
+            background: rgba(0, 0, 0, 0.03);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            white-space: pre-wrap;
+            margin-bottom: 1rem;
+        }
+
+        .legal-btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .undobuttons { text-align: center; transform: translateY(-160%); }
+        .undotext { font-size: 13px; }
+
+        /* Rewarded Ad Progress Bar */
+        .ad-progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--slate-200);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+
+        .ad-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #3b82f6, #9333ea);
+            transition: width 0.1s linear;
+        }
+
+        .ad-video-box {
+            background: linear-gradient(135deg, #0f172a, #1e1b4b);
+            color: white;
+            border-radius: 16px;
+            padding: 20px 12px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Greyed-out tab styling */
+        .tab-btn.disabled-pro-tab {
+            opacity: 0.5;
+            filter: grayscale(100%);
+            cursor: pointer;
+            position: relative;
+        }
+
+        /* Optional PRO badge overlay */
+        .tab-btn.disabled-pro-tab .pro-badge {
+            position: absolute;
+            top: 2px;
+            right: 6px;
+            background-color: #f39c12;
+            color: #fff;
+            font-size: 8px;
+            font-weight: bold;
+            padding: 1px 4px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .tab-btn.disabled-pro-tab:hover {
+            opacity: 0.7;
+        }
+
+
+        
+        
+    </style>
+</head>
+<body>
+
+    <div class="app-viewport">
+        <!-- Top Fixed Header -->
+        <div class="top-header">
+            <div class="brand-text-header">
+                <button class="info-btn" onclick="toggleModal('infoModal', true)" aria-label="Information">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                </button>
+                <div style="line-height: 1.1;">
+                    <span class="brand-fancy">DrinkMe!</span><span class="text-blue-500">Lite</span>
+                </div>
+            </div>
+
+            <div id="streakBadge" class="streak-info" onclick="scrollToTab(2)">
+                <span>🔥</span> <span id="streakCount">0 Day Streak</span>
+            </div>
+        </div>
+
+        <!-- Horizontal Swipeable Views Container -->
+        <div class="swipe-container" id="swipeContainer">
+            
+            <!-- TAB 0: TRACKER (HOME) -->
+            <div class="tab-pane">
+                <div class="ad-banner2" id="adBanner" onclick="handleAdClick()">
+                    <span class="ad-label">ADVERTISEMENT</span>
+                    <div class="ad-content">
+                        <span class="ad-emoji">🌿</span>
+                        <div>
+                            <p class="ad-title">EcoBottle Co.</p>
+                            <p class="ad-text">Save the planet with 100% biodegradable bamboo water bottles.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="progress-section">
+                    <div class="main-circle" id="circleFrame">
+                        <div id="waveWrapper" class="wave-wrapper" style="height: 0%;">
+                            <div id="waveBack" class="wave wave-back"></div>
+                            <div id="waveFront" class="wave"></div>
+                        </div>
+                        <div id="woActive" class="status-badge">Workout Active</div>
+                        <div id="remActiveBadge" class="status-badge" style="top:45px">Reminders On</div>
+                        <div class="progress-text">
+                            <p id="percentDisplay" class="percentage">0%</p>
+                            <p id="statDisplay" style="color:var(--slate-900);" class="stats">0 / 2500 ML</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quick-log-grid">
+                    <div class="log-card" onclick="addWaterFromBtn(0)">
+                        <span class="log-amount" id="labelBtn1">250ml</span>
+                        <span class="log-label">Sip</span>
+                    </div>
+                    <div class="log-card" onclick="addWaterFromBtn(1)">
+                        <span class="log-amount" id="labelBtn2">500ml</span>
+                        <span class="log-label">Cup</span>
+                    </div>
+                </div>
+
+                <div class="undobuttons">
+                    <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+                        <button onclick="undoLastSip()" style="padding: 6px 10px; font-weight: 700; text-transform: uppercase; color: #64748b; background: transparent; border: none; cursor: pointer;">
+                            <div class="undotext">Undo Last Sip</div>
+                        </button>
+                        <span style="color: #cbd5e1; font-size: 10px;">|</span>
+                        <button onclick="resetProgress()" style="padding: 6px 10px; font-weight: 700; text-transform: uppercase; color: #64748b; background: transparent; border: none; cursor: pointer;">
+                            <div class="undotext">Reset Progress</div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="ad-banner" id="adBannerBottom" onclick="handleAdClick()">
+                    <span class="ad-label">ADVERTISEMENT</span>
+                    <div class="ad-content">
+                        <span class="ad-emoji">🌿</span>
+                        <div>
+                            <p class="ad-title">EcoBottle Co.</p>
+                            <p class="ad-text">Save the planet with 100% biodegradable bamboo water bottles.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 1: REMINDERS -->
+            <div class="tab-pane">
+                <div class="pane-card">
+                    <div class="pane-header">
+                        <h3>Daily Reminders</h3>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Frequency (Minutes)</label>
+                        <input type="number" id="remFreq" value="60" min="15">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Reminder Amount (<span class="unit-text">ml</span>)</label>
+                        <input type="number" id="remAmt" value="250">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Reminder Window</label>
+                        <div style="display:flex; gap:8px">
+                            <input type="time" id="remStart" value="09:00">
+                            <input type="time" id="remEnd" value="18:00">
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                        <input type="checkbox" id="remRepeat" style="width:16px; height:16px;">
+                        <label for="remRepeat" style="font-size:13px; color:var(--slate-700); font-weight:700;">Repeat Daily</label>
+                    </div>
+                    
+                    <div class="input-group" style="background: var(--slate-50); padding: 12px; border-radius: 14px; border: 1.5px dashed var(--blue-200); margin-bottom: 16px;">
+                        <label class="input-label" style="margin-bottom: 4px; color: var(--blue-600)">System Notifications</label>
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                            <span id="notifStatusText" style="font-size: 12px; color: var(--slate-500); font-weight: 700;">Checking Status...</span>
+                            <button id="notifRequestBtn" class="body-profile-btn" style="padding: 6px 10px; margin: 0;" onclick="requestSystemNotificationPermission()">Enable</button>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px;">
+                            <label for="desktopNotifToggle" style="font-size: 11px; color: var(--slate-500); font-weight: 700;">Receive mobile/desktop notifications</label>
+                            <input type="checkbox" id="desktopNotifToggle">
+                        </div>
+                    </div>
+
+                    <p style="font-size: 10px; color: var(--slate-400); margin-top:-6px; margin-bottom:16px;">Upgrade to Pro to get more advanced reminder features.</p>
+                    
+                    <div style="display:flex; gap:8px">
+                        <button class="secondary-btn" id="stopRemBtn" onclick="stopDailyReminders()">Disable</button>
+                        <button class="save-btn" style="flex:2" onclick="startDailyReminders()">Enable Reminders</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: HISTORY -->
+            <div class="tab-pane">
+                <div class="pane-card">
+                    <div class="pane-header">
+                        <h3>Hydration History</h3>
+                    </div>
+
+                    <div class="unit-toggle" style="margin-bottom: 16px;">
+                        <button id="streakTab7" class="unit-btn active" onclick="switchStreakTab(7)">7 Days</button>
+                        <button id="streakTab14" class="unit-btn" onclick="switchStreakTab(14)">14 Days 🎬</button>
+                        <button id="streakTab30" class="unit-btn" style="opacity: 0.5; cursor: pointer; color: var(--slate-400);" onclick="scrollToTab(4)">30 Days 👑</button>
+                    </div>
+
+                    <div style="position: relative; height: 240px; width: 100%;">
+                        <canvas id="streakChart"></canvas>
+                    </div>
+                    
+                    <p id="streakTrackingText" style="text-align:center; font-size:11px; color:var(--slate-400); margin-top:12px;">Tracking last 7 days of hydration.</p>
+                    <h3 style="text-align: center; font-size: 11px; font-weight: 700; color: var(--slate-600); margin-top: 4px;">
+                        🟧=Goal | 🟦=Water
+                    </h3>
+
+                    <div id="editHistoryArea" style="display:none; margin-top: 12px; padding: 12px; background: var(--slate-50); border-radius: 16px; border: 2px dashed var(--blue-200); text-align: center;">
+                        <p style="margin: 0 0 8px 0; font-size: 12px; color: var(--slate-600); font-weight: 800;">
+                            ✏️ <span>Edit Intake for</span> <span id="editHistoryDateLabel" style="color: var(--blue-600);">-</span>
+                        </p>
+                        <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+                            <input type="number" id="editHistoryInput" style="max-width: 100px; padding: 8px; border-radius: 10px; border: 1.5px solid var(--slate-200); text-align: center;" placeholder="0">
+                            <span class="unit-text" style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--slate-500);">ml</span>
+                            <button class="save-btn" style="margin: 0; padding: 8px 14px; width: auto; font-size: 12px;" onclick="submitHistoryEdit()">
+                                Update
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: SETTINGS -->
+            <div class="tab-pane">
+                <div class="pane-card">
+                    <div class="pane-header">
+                        <h3>App Settings</h3>
+                    </div>
+                    
+                    <label class="input-label">Unit</label>
+                    <div class="unit-toggle">
+                        <button id="unitMl" class="unit-btn active" onclick="setUnit('ml')">ML</button>
+                        <button id="unitOz" class="unit-btn" onclick="setUnit('oz')">OZ (30 Milliliters)</button>
+                        <button id="unitCups" class="unit-btn" onclick="setUnit('cups')">CUPS (8 Ounces)</button>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label">Daily Goal (<span class="unit-text">ml</span>)</label>
+                        <input type="number" id="goalInput">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Quick Presets (<span class="unit-text">ml</span>)</label>
+                        <div style="display:flex; gap:6px"><input type="number" id="b1"><input type="number" id="b2"><input type="number" id="b3" style="display:none"></div>
+                    </div>
+
+                    <div class="settings-dropdown-box">
+                        <details id="customizationAccordion">
+                            <summary>
+                                <span>🎨 App Themes & Sounds</span>
+                                <span style="font-size: 11px; color: var(--blue-600); font-weight: 700;"> ▼</span>
+                            </summary>
+                            <div class="settings-dropdown-content">
+                                <div id="rewardBgAdBanner" style="background: #fef3c7; border: 1.5px dashed #f59e0b; padding: 10px; border-radius: 14px; text-align: center;">
+                                    <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: 800; color: #92400e;">
+                                        🎨 Unlock Background Gradient Themes
+                                    </p>
+                                    <button class="save-btn" id="watchBgAdBtn" style="background: linear-gradient(135deg, #d97706, #b45309); padding: 8px 12px; font-size: 12px; font-weight: 800;" onclick="startRewardedAd('bg')">
+                                        🎬 Watch Short Ad (5s) for Backgrounds
+                                    </button>
+                                </div>
+
+                                <div id="bgGradientContainer" style="display: none;">
+                                    <label class="input-label">Background Gradient Theme</label>
+                                    <select id="selectBgGradient" onchange="handleThemeChange('bg')">
+                                        <option value="aero">Frutiger Aero Sky (Default)</option>
+                                        <option value="sunset">🌅 Sunset Aero (Peach & Magenta)</option>
+                                        <option value="emerald">🌿 Emerald Forest (Nature Lime)</option>
+                                        <option value="midnight">🌙 Deep Ocean Midnight (Dark Aqua)</option>
+                                        <option value="candy">🍬 Cotton Candy (Soft Sky Pastel)</option>
+                                        <option value="cyberpunk">⚡ Cyber Neon (Violet & Cyan)</option>
+                                        <option value="aurora">🌌 Northern Lights (Teal & Purple)</option>
+                                        <option value="lavender">🪻 Lavender Breeze (Lilac & Periwinkle)</option>
+                                        <option value="gold">☀️ Golden Hour (Amber & Coral)</option>
+                                        <option value="glacier">🧊 Arctic Glacier (Frost & Deep Blue)</option>
+                                    </select>
+                                </div>
+
+                                <div id="rewardWaterAdBanner" style="background: #ccfbf1; border: 1.5px dashed #0d9488; padding: 10px; border-radius: 14px; text-align: center; margin-top: 8px;">
+                                    <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: 800; color: #115e59;">
+                                        🌊 Unlock Liquid Water Colors
+                                    </p>
+                                    <button class="save-btn" id="watchWaterAdBtn" style="background: linear-gradient(135deg, #0d9488, #0f766e); padding: 8px 12px; font-size: 12px; font-weight: 800;" onclick="startRewardedAd('water')">
+                                        🎬 Watch Short Ad (5s) for Water Colors
+                                    </button>
+                                </div>
+
+                                <div id="waterColorContainer" style="display: none;">
+                                    <label class="input-label">Liquid Water Color</label>
+                                    <select id="selectWaterColor" onchange="handleThemeChange('water')">
+                                        <option value="default">Classic Aero Aqua (Default)</option>
+                                        <option value="emerald">💚 Emerald Eco Green</option>
+                                        <option value="purple">💜 Neon Electric Purple</option>
+                                        <option value="orange">🍊 Citrus Sunrise Orange</option>
+                                        <option value="pink">💖 Bubblegum Coral Pink</option>
+                                        <option value="crimson">❤️ Ruby Berry Crimson</option>
+                                        <option value="cyan">🐬 Cyber Electric Cyan</option>
+                                        <option value="gold">🍯 Honey Golden Amber</option>
+                                        <option value="indigo">🌌 Deep Abyss Sapphire</option>
+                                        <option value="lime">🧪 Electric Matcha Lime</option>
+                                    </select>
+                                </div>
+
+                                <div id="rewardSoundAdBanner" style="background: #e0f2fe; border: 1.5px dashed #0284c7; padding: 10px; border-radius: 14px; text-align: center; margin-top: 8px;">
+                                    <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: 800; color: #0369a1;" id="adSoundPassTitle">
+                                        🎵 Unlock Custom Notification Tones
+                                    </p>
+                                    <button class="save-btn" id="watchSoundAdBtn" style="background: linear-gradient(135deg, #0284c7, #0369a1); padding: 8px 12px; font-size: 12px; font-weight: 800;" onclick="startRewardedAd('sound')">
+                                        🎬 Watch Short Ad (5s) for Sounds
+                                    </button>
+                                </div>
+
+                                <div id="notifSoundContainer" style="display: none;">
+                                    <label class="input-label">Reminder Notification Tone</label>
+                                    <div style="display: flex; gap: 6px;">
+                                        <select id="selectNotifSound" style="flex: 1;" onchange="handleThemeChange('sound')">
+                                            <option value="chime">🔔 Classic Chime (Default)</option>
+                                            <option value="bubble">🫧 Bubble Pop</option>
+                                            <option value="bell">🎵 Harmonic Bell</option>
+                                            <option value="synth">👾 8-Bit Retro Beep</option>
+                                            <option value="drop">💧 Water Droplet</option>
+                                            <option value="marimba">🪵 Wooden Marimba</option>
+                                            <option value="cosmic">🚀 Cosmic Shimmer</option>
+                                            <option value="fanfare">🎺 Mini Fanfare</option>
+                                            <option value="echo">🌊 Ocean Ripple</option>
+                                        </select>
+                                        <button class="body-profile-btn" style="padding: 0 10px; height: 44px;" onclick="playTestSound()">
+                                            ▶️ Test
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+
+                    <button class="save-btn" onclick="saveSettings()">Save Changes</button>
+                </div>
+            </div>
+
+            <!-- TAB 4: PRO -->
+            <div class="tab-pane">
+                <div class="pane-card" style="text-align: center;">
+                    <div style="font-size:38px; margin-bottom:8px;">👑</div>
+                    <h3 style="font-size: 20px; font-weight: 900; margin: 0 0 6px 0; color: var(--slate-800)">Upgrade to Pro</h3>
+                    <p style="color:var(--slate-500); font-size:12px; line-height:1.4; margin: 0 0 16px 0;">Unlock full access to advanced hydration assistant features and boost your daily wellness journey!</p>
+                    
+                    <div style="text-align: left; background: var(--slate-50); border-radius: 14px; padding: 14px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--slate-100);">
+                        <div style="display: flex; align-items: flex-start; gap: 10px;">
+                            <span style="font-size: 16px;">🏃‍♂️</span>
+                            <div>
+                                <strong style="font-size: 12px; color: var(--slate-800); display: block;">Workout Hydration Planner</strong>
+                                <span style="font-size: 11px; color: var(--slate-500);">Smart alerts calculated for pre, during, and post workout.</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: flex-start; gap: 10px;">
+                            <span style="font-size: 16px;">🍹</span>
+                            <div>
+                                <strong style="font-size: 12px; color: var(--slate-800); display: block;">Healthy Drink Recipes</strong>
+                                <span style="font-size: 11px; color: var(--slate-500);">Over 20+ custom flavored waters, juices, teas, and smoothies.</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: flex-start; gap: 10px;">
+                            <span style="font-size: 16px;">📊</span>
+                            <div>
+                                <strong style="font-size: 12px; color: var(--slate-800); display: block;">Advanced Progress Analytics</strong>
+                                <span style="font-size: 11px; color: var(--slate-500);">30-day chronological history charts and interactive intake logger.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="save-btn" style="background: linear-gradient(135deg, var(--blue-500), var(--blue-700)); color: white;" onclick="alert('Thank you for your interest! Pro is coming soon! Enjoy tracking your water!')">Get Pro Now</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Bottom Navigation Bar -->
+        <div class="bottom-tab-bar">
+            <button class="tab-btn active" onclick="scrollToTab(0)">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                <span>Tracker</span>
+            </button>
+            <button class="tab-btn" onclick="scrollToTab(1)">
+                <svg style="fill: #ff8c00; stroke: #ff8c00;" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                <div class="tab-indicator-badge" id="remTabBadge"></div>
+                <span>Reminders</span>
+            </button>
+            <button class="tab-btn" onclick="scrollToTab(2)">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                <span>History</span>
+            </button>
+            <button class="tab-btn" onclick="scrollToTab(3)">
+                <svg style="fill: #007bff; stroke: #007bff;" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span>Settings</span>
+            </button>
+            <button class="tab-btn" onclick="scrollToTab(4)">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4l3 12h14l3-12-6 7-4-5-4 5-6-7z"/></svg>
+                <span>Pro</span>
+            </button>
+
+
+            <button class="tab-btn disabled-pro-tab" onclick="openProTab('Workout')" title="Pro Feature">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg>
+                <span class="pro-badge">PRO</span>
+            </button>
+
+            <button class="tab-btn disabled-pro-tab" onclick="openProTab('Recipes')" title="Pro Feature">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                <span class="pro-badge">PRO</span>
+            </button>
+
+
+
+        </div>
+    </div>
+
+    <!-- REWARDED AD VIDEO MODAL -->
+    <div id="rewardedAdModal" class="modal-overlay">
+        <div class="modal-card" style="text-align: center; max-width: 380px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span class="ad-label" style="position: static; font-size: 9px;">SPONSORED VIDEO</span>
+                <span id="adTimerText" style="font-size: 12px; font-weight: 800; color: var(--slate-500);">Ad ends in: 5s</span>
+            </div>
+
+            <div class="ad-video-box">
+                <div style="font-size: 42px; margin-bottom: 8px;" id="adAnimIcon">🌊</div>
+                <h4 style="margin: 0 0 4px 0; font-size: 15px;" id="adVideoTitle">Pure Hydration Springs</h4>
+                <p style="margin: 0; font-size: 12px; color: #cbd5e1;" id="adVideoDesc">Refreshing 100% natural mountain water delivered right to your home.</p>
+            </div>
+
+            <div class="ad-progress-bar">
+                <div id="adProgressFill" class="ad-progress-fill"></div>
+            </div>
+
+            <p style="font-size: 11px; color: var(--slate-500); margin-bottom: 12px;">Please wait for the ad to finish to receive your reward.</p>
+
+            <button id="closeAdBtn" class="save-btn" style="background: var(--slate-400); cursor: not-allowed;" disabled onclick="completeRewardedAd()">
+                Watching Ad... (5s)
+            </button>
+        </div>
+    </div>
+
+    <!-- Info/Tutorial Modal -->
+    <div id="infoModal" class="modal-overlay">
+        <div class="modal-card" style="text-align:center">
+            <div style="font-size:36px; margin-bottom:10px">💡</div>
+            <h3>App Manual</h3>
+
+            <div class="slideshow-container">
+                <div class="mySlides fade">
+                    <div class="numbertext">1 / 4</div>
+                    <div class="slide-graphic"><img src="/img/ProgressPT1.PNG" alt="Tip 1" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'120\' height=\'120\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%233b82f6\' stroke-width=\'2\'><path d=\'M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z\'/></svg>'"></div>
+                    <div class="text">Track your daily water intake seamlessly throughout the day.</div>
+                </div>
+
+                <div class="mySlides fade">
+                    <div class="numbertext">2 / 4</div>
+                    <div class="slide-graphic"><img src="/img/SettingsPT1.PNG" alt="Tip 2" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'120\' height=\'120\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%233b82f6\' stroke-width=\'2\'><circle cx=\'12\' cy=\'12\' r=\'3\'/></svg>'"></div>
+                    <div class="text">Review accurate history analytics to see patterns over time.</div>
+                </div>
+
+                <div class="mySlides fade">
+                    <div class="numbertext">3 / 4</div>
+                    <div class="slide-graphic"><img src="/img/RemPT1.PNG" alt="Tip 3" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'120\' height=\'120\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%233b82f6\' stroke-width=\'2\'><path d=\'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9\'/></svg>'"></div>
+                    <div class="text">Choose between a variety of different water recipes.</div>
+                </div>
+
+                <div class="mySlides fade">
+                    <div class="numbertext">4 / 4</div>
+                    <div class="slide-graphic"><img src="/img/HistoryPT1.PNG" alt="Tip 4" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'120\' height=\'120\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%233b82f6\' stroke-width=\'2\'><path d=\'M3 3v18h18\'/></svg>'"></div>
+                    <div class="text">Stay on top of your daily goal and unlock custom rewards.</div>
+                </div>
+
+                <a class="prev" onclick="plusSlides(-1)">❮</a>
+                <a class="next" onclick="plusSlides(1)">❯</a>
+            </div>
+            <br>
+
+            <div style="text-align:center">
+                <span class="slide-dot" onclick="currentSlide(1)"></span> 
+                <span class="slide-dot" onclick="currentSlide(2)"></span> 
+                <span class="slide-dot" onclick="currentSlide(3)"></span> 
+                <span class="slide-dot" onclick="currentSlide(4)"></span> 
+            </div>
+
+            <p style="color:var(--slate-500); font-size:12px; line-height:1.5; margin-top:10px;">Proper hydration boosts energy, improves brain function, and keeps your skin glowing. Try to hit your target every day!</p>
+            <div style="font-size:10px; color:var(--slate-400); margin-top:6px;">
+                Disclaimer: The contents, features, and outputs of this app are for informational purposes only and do not constitute professional medical advice, diagnosis, or treatment.
+
+                <div class="legal-btn-group">
+                    <button class="secondary-btn" style="padding: 6px 12px; font-size: 11px;" onclick="toggleModal('termsModal', true)">Terms of Service</button>
+                    <button class="secondary-btn" style="padding: 6px 12px; font-size: 11px;" onclick="toggleModal('privacyModal', true)">Privacy Policy</button>
+                </div>
+
+                <div id="termsModal" class="modal-overlay">
+                    <div class="modal-card">
+                        <h2>Terms of Service</h2>
+                        <div class="legal-doc-content" id="termsContent"></div>
+                        <button class="save-btn" onclick="toggleModal('termsModal', false)">I Agree</button>
+                    </div>
+                </div>
+
+                <div id="privacyModal" class="modal-overlay">
+                    <div class="modal-card">
+                        <h2>Privacy Policy</h2>
+                        <div class="legal-doc-content" id="privacyContent"></div>
+                        <button class="save-btn" onclick="toggleModal('privacyModal', false)">I Agree</button>
+                    </div>
+                </div>
+            </div>
+            <button class="save-btn" style="margin-top:15px" onclick="toggleModal('infoModal', false)">I agree!</button>
+        </div>
+    </div>
+
+    <!-- Sandbox Restriction Warning Modal -->
+    <div id="sandboxWarningModal" class="modal-overlay">
+        <div class="modal-card" style="text-align:center">
+            <div style="font-size:38px; margin-bottom:10px">🔒</div>
+            <h3>Browser Sandbox Restriction</h3>
+            <p style="color:var(--slate-500); font-size:13px; line-height:1.5; text-align:left; margin-bottom:16px;">
+                Your web browser blocked this request because the app is running inside a secure preview sandbox (iframe).
+            </p>
+            <div style="background: var(--slate-50); padding: 10px 14px; border-radius: 12px; text-align:left; font-size:11px; color:var(--slate-600); border: 1px solid var(--slate-100); margin-bottom:16px;">
+                <strong>To make notifications work:</strong>
+                <ol style="margin: 4px 0 0 14px; padding: 0;">
+                    <li>Download or save this page as an <code>.html</code> file.</li>
+                    <li>Double-click the saved file to run it directly in your browser!</li>
+                </ol>
+            </div>
+            <button class="save-btn" onclick="toggleModal('sandboxWarningModal', false)">I Understand</button>
+        </div>
+    </div>
+
+    <!-- Reset Modal -->
+    <div id="resetModal" class="modal-overlay">
+        <div class="modal-card" style="text-align:center">
+            <div style="font-size:36px; margin-bottom:10px">⚠️</div>
+            <h3>Reset Progress?</h3>
+            <p style="color:var(--slate-500); font-size:13px">This will clear today's intake. Streaks aren't affected unless you fail your daily goal.</p>
+            <div style="display:flex; gap:8px; margin-top:20px">
+                <button class="secondary-btn" onclick="toggleModal('resetModal', false)">Cancel</button>
+                <button class="save-btn" style="background:#ef4444; box-shadow:none" onclick="resetProgress()">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Reminder Modal -->
+    <div id="activeReminderModal" class="modal-overlay">
+        <div class="modal-card reminder-active-card" style="text-align: center;">
+            <div style="font-size:42px; margin-bottom:10px">💧</div>
+            <h3 id="remTitle">Hydration Break</h3>
+            <p id="remMsg" style="color:var(--slate-500); font-size:13px; margin-bottom:20px">Time to drink your scheduled water.</p>
+            <div style="display:flex; gap:8px">
+                <button class="secondary-btn" onclick="toggleModal('activeReminderModal', false)">Skip</button>
+                <button class="save-btn" id="remConfirmBtn" style="flex:2">I Drank It!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sponsor Modal -->
+    <div id="sponsorModal" class="modal-overlay">
+        <div class="modal-card" style="text-align:center">
+            <div id="sponsorEmoji" style="font-size:38px; margin-bottom:8px;">🌿</div>
+            <h3 id="sponsorTitle" style="font-size: 18px; font-weight: 900; margin: 0 0 6px 0; color: var(--slate-800);">Sponsor Highlight</h3>
+            <p id="sponsorDesc" style="color:var(--slate-500); font-size:12px; line-height:1.4; margin-bottom: 16px;">Detailed description of the sponsor brand.</p>
+            
+            <div style="background: var(--blue-50); border: 2px dashed var(--blue-400); border-radius: 12px; padding: 10px; margin-bottom: 16px;">
+                <p style="margin:0 0 2px 0; font-size:10px; font-weight:700; color:var(--blue-600); text-transform:uppercase; letter-spacing:0.8px;">Promo Code</p>
+                <strong id="sponsorCode" style="font-size: 16px; color: var(--blue-700);">ECO15</strong>
+            </div>
+
+            <div style="display:flex; gap:8px;">
+                <button class="save-btn" style="margin:0; flex:1;" onclick="toggleModal('sponsorModal', false)">Great, Thanks!</button>
+                <button class="secondary-btn" style="margin:0; font-size:11px; color:var(--blue-600); background:white; border: 1.5px solid var(--blue-100);" onclick="toggleModal('sponsorModal', false); scrollToTab(4);">Go Ad-Free</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Swipe Navigation Engine ---
+        const swipeContainer = document.getElementById('swipeContainer');
+        const tabBtns = document.querySelectorAll('.bottom-tab-bar .tab-btn');
+        let currentActiveTab = 0;
+
+        function scrollToTab(index) {
+            if (index < 0 || index >= tabBtns.length) return;
+            const targetLeft = index * swipeContainer.clientWidth;
+            swipeContainer.scrollTo({ left: targetLeft, behavior: 'smooth' });
+            updateActiveTabUI(index);
+        }
+
+        function updateActiveTabUI(index) {
+            currentActiveTab = index;
+            tabBtns.forEach((btn, i) => {
+                btn.classList.toggle('active', i === index);
+            });
+            if (index === 2) {
+                setTimeout(renderStreakChart, 150);
+            }
+        }
+
+        swipeContainer.addEventListener('scroll', () => {
+            const index = Math.round(swipeContainer.scrollLeft / swipeContainer.clientWidth);
+            if (index !== currentActiveTab) {
+                updateActiveTabUI(index);
+            }
+        });
+
+        // --- Wholesome Active Ads ---
+        const wholesomeAds = [
+            {
+                emoji: "🌿",
+                title: "EcoBottle Co.",
+                text: "Save the planet with sustainable organic bamboo bottles.",
+                detailTitle: "EcoBottle Bamboo Edition",
+                detailDesc: "Crafted from wild organic bamboo and insulated double-walled stainless steel. Keeps water icy cold all day!",
+                code: "ECO15"
+            },
+            {
+                emoji: "🍓",
+                title: "FruitSqueeze Infusers",
+                text: "Add natural strawberry and lemon splash to your water today.",
+                detailTitle: "FruitSqueeze Infuser Cup",
+                detailDesc: "A fun and leak-proof basket infuser bottle. Perfect for crafting zero-calorie water recipes!",
+                code: "FRUIT20"
+            },
+            {
+                emoji: "🧩",
+                title: "Daily Hydration Quest",
+                text: "Unlock achievements and healthy habits with family.",
+                detailTitle: "Hydration Quest Guide",
+                detailDesc: "Build amazing hydration habits with daily games and stay properly hydrated throughout the week.",
+                code: "PLAYWATER"
+            }
+        ];
+
+        let currentAdIndex = 0;
+
+        function rotateAds() {
+            currentAdIndex = (currentAdIndex + 1) % wholesomeAds.length;
+            const ad = wholesomeAds[currentAdIndex];
+            
+            const banners = [document.getElementById('adBanner'), document.getElementById('adBannerBottom')];
+            banners.forEach(banner => {
+                if (banner) {
+                    const emojiSpan = banner.querySelector('.ad-emoji');
+                    const titleP = banner.querySelector('.ad-title');
+                    const textP = banner.querySelector('.ad-text');
+                    
+                    if (emojiSpan) emojiSpan.innerText = ad.emoji;
+                    if (titleP) titleP.innerText = ad.title;
+                    if (textP) textP.innerText = ad.text;
+                }
+            });
+        }
+
+        function handleAdClick() {
+            const ad = wholesomeAds[currentAdIndex];
+            document.getElementById('sponsorEmoji').innerText = ad.emoji;
+            document.getElementById('sponsorTitle').innerText = ad.detailTitle;
+            document.getElementById('sponsorDesc').innerText = ad.detailDesc;
+            document.getElementById('sponsorCode').innerText = ad.code;
+            toggleModal('sponsorModal', true);
+        }
+
+
+        function openProTab(featureName) {
+            // Navigates smoothly to Tab index 4 (the Pro tab)
+            scrollToTab(4);
+        }
+
+
+
+        // --- Slideshow Logic ---
+        let slideIndex = 1;
+
+        function plusSlides(n) { showSlides(slideIndex += n); }
+        function currentSlide(n) { showSlides(slideIndex = n); }
+
+        function showSlides(n) {
+            let i;
+            let slides = document.getElementsByClassName("mySlides");
+            let dots = document.getElementsByClassName("slide-dot");
+            if (slides.length === 0) return;
+            if (n > slides.length) { slideIndex = 1; }    
+            if (n < 1) { slideIndex = slides.length; }
+            for (i = 0; i < slides.length; i++) { slides[i].style.display = "none"; }
+            for (i = 0; i < dots.length; i++) { dots[i].className = dots[i].className.replace(" active-slide", ""); }
+            slides[slideIndex - 1].style.display = "block";  
+            if (dots[slideIndex - 1]) { dots[slideIndex - 1].className += " active-slide"; }
+        }
+
+        // --- Customization Options State & Web Audio Synthesizer ---
+        const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+        let customizations = {
+            bgGradient: 'aero',
+            waterColor: 'default',
+            notifSound: 'chime',
+            bgUnlocked: false,
+            waterUnlocked: false,
+            soundUnlocked: false,
+            bgUnlockedTime: 0,
+            waterUnlockedTime: 0,
+            soundUnlockedTime: 0
+        };
+
+        const bgGradients = {
+            aero: 'linear-gradient(135deg, #f0fdf4 0%, #bae6fd 25%, #a7f3d0 65%, #7dd3fc 100%)',
+            sunset: 'linear-gradient(135deg, #fff7ed 0%, #fed7aa 35%, #fbcfe8 70%, #e9d5ff 100%)',
+            emerald: 'linear-gradient(135deg, #f0fdf4 0%, #d1fae5 30%, #6ee7b7 70%, #34d399 100%)',
+            midnight: 'linear-gradient(135deg, #f8fafc 0%, #cbd5e1 35%, #7dd3fc 70%, #cbd5e1 100%)',
+            candy: 'linear-gradient(135deg, #fdf4ff 0%, #fce7f3 35%, #e0f2fe 70%, #e0e7ff 100%)',
+            cyberpunk: 'linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 35%, #a5f3fc 70%, #99f6e4 100%)',
+            aurora: 'linear-gradient(135deg, #dcfce7 0%, #99f6e4 35%, #c7d2fe 70%, #f3e8ff 100%)',
+            lavender: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 35%, #e0e7ff 70%, #bfdbfe 100%)',
+            gold: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 35%, #fed7aa 70%, #fecdd3 100%)',
+            glacier: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 30%, #e0f2fe 65%, #93c5fd 100%)'
+        };
+
+        const waterGradients = {
+            default: {
+                gradient: 'linear-gradient(to bottom, #42e6f5 0%, #1593db 60%, #0060ad 100%)',
+                waveHex: '%2342e6f5',
+                backHex: '%233bbcdb'
+            },
+            emerald: {
+                gradient: 'linear-gradient(to bottom, #a3e635 0%, #22c55e 60%, #15803d 100%)',
+                waveHex: '%23a3e635',
+                backHex: '%234ade80'
+            },
+            purple: {
+                gradient: 'linear-gradient(to bottom, #e879f9 0%, #a855f7 60%, #6b21a8 100%)',
+                waveHex: '%23e879f9',
+                backHex: '%23c084fc'
+            },
+            orange: {
+                gradient: 'linear-gradient(to bottom, #fbbf24 0%, #f97316 60%, #c2410c 100%)',
+                waveHex: '%23fbbf24',
+                backHex: '%23fb923c'
+            },
+            pink: {
+                gradient: 'linear-gradient(to bottom, #f472b6 0%, #ec4899 60%, #be185d 100%)',
+                waveHex: '%23f472b6',
+                backHex: '%23f43f5e'
+            },
+            crimson: {
+                gradient: 'linear-gradient(to bottom, #f87171 0%, #dc2626 60%, #881337 100%)',
+                waveHex: '%23f87171',
+                backHex: '%23ef4444'
+            },
+            cyan: {
+                gradient: 'linear-gradient(to bottom, #22d3ee 0%, #06b6d4 60%, #0891b2 100%)',
+                waveHex: '%2322d3ee',
+                backHex: '%2338bdf8'
+            },
+            gold: {
+                gradient: 'linear-gradient(to bottom, #fde047 0%, #eab308 60%, #a16207 100%)',
+                waveHex: '%23fde047',
+                backHex: '%23facc15'
+            },
+            indigo: {
+                gradient: 'linear-gradient(to bottom, #818cf8 0%, #4f46e5 60%, #1e1b4b 100%)',
+                waveHex: '%23818cf8',
+                backHex: '%236366f1'
+            },
+            lime: {
+                gradient: 'linear-gradient(to bottom, #bef264 0%, #84cc16 60%, #3f6212 100%)',
+                waveHex: '%23bef264',
+                backHex: '%23a3e635'
+            }
+        };
+
+        const termsText = `TERMS OF SERVICE FOR DRINK ME! LITE
+        Last Updated: July 25, 2026
+
+        1. Description of Service
+        Drink Me! Lite is a client-side hydration tracking application designed to help users track daily water intake and set reminders.
+
+        2. Medical Disclaimer
+        DRINK ME! LITE IS NOT A MEDICAL DEVICE AND DOES NOT PROVIDE MEDICAL ADVICE. Always seek the advice of a qualified healthcare provider regarding hydration.
+
+        3. Offline Storage
+        All data is stored locally on your device via standard web storage (localStorage).`;
+
+        const privacyText = `PRIVACY POLICY FOR DRINK ME! LITE
+        Last Updated: July 25, 2026
+
+        1. Information We Do NOT Collect
+        We do not collect or store personal identifiable information, health records, or location data on remote servers.
+
+        2. Local Storage
+        All data is saved directly in your browser using standard Local Storage.`;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const tEl = document.getElementById('termsContent');
+            const pEl = document.getElementById('privacyContent');
+            if (tEl) tEl.textContent = termsText;
+            if (pEl) pEl.textContent = privacyText;
+        });
+
+        function checkWeeklyAdExpiration() {
+            const now = Date.now();
+            let stateChanged = false;
+
+            if (customizations.bgUnlocked && customizations.bgUnlockedTime) {
+                if (now - customizations.bgUnlockedTime >= ONE_WEEK_MS) {
+                    customizations.bgUnlocked = false;
+                    customizations.bgUnlockedTime = 0;
+                    customizations.bgGradient = 'aero';
+                    stateChanged = true;
+                }
+            }
+
+            if (customizations.waterUnlocked && customizations.waterUnlockedTime) {
+                if (now - customizations.waterUnlockedTime >= ONE_WEEK_MS) {
+                    customizations.waterUnlocked = false;
+                    customizations.waterUnlockedTime = 0;
+                    customizations.waterColor = 'default';
+                    stateChanged = true;
+                }
+            }
+
+            if (customizations.soundUnlocked && customizations.soundUnlockedTime) {
+                if (now - customizations.soundUnlockedTime >= ONE_WEEK_MS) {
+                    customizations.soundUnlocked = false;
+                    customizations.soundUnlockedTime = 0;
+                    customizations.notifSound = 'chime';
+                    stateChanged = true;
+                }
+            }
+
+            if (stateChanged) saveCustomizations();
+        }
+
+        // Helper for micro-variation in sound frequencies and timings
+        function soundJitter(val, percent = 0.08) {
+            return val * (1 + (Math.random() * 2 - 1) * percent);
+        }
+
+function playSynthesizedSound(toneType) {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                if (ctx.state === 'suspended') ctx.resume();
+
+                const now = ctx.currentTime;
+                
+                const playFrequency = (freq, type, startTime, duration, gainVal = 0.3) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, now + startTime);
+                    gain.gain.setValueAtTime(gainVal, now + startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + startTime + duration);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now + startTime);
+                    osc.stop(now + startTime + duration);
+                };
+
+                if (toneType === 'bubble') {
+                    // Dynamic pitch-shifted Bubble Pop
+                    const baseFreq = soundJitter(320, 0.12);
+                    const topFreq = soundJitter(850, 0.12);
+                    const dur = soundJitter(0.12, 0.15);
+
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(baseFreq, now);
+                    osc.frequency.exponentialRampToValueAtTime(topFreq, now + dur * 0.8);
+
+                    gain.gain.setValueAtTime(0, now);
+                    gain.gain.linearRampToValueAtTime(0.4, now + 0.01);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + dur);
+                } else if (toneType === 'bell') {
+                    // Harmonic Metallic Bell with rich overtones
+                    const pitch = soundJitter(659.25, 0.04); // Base pitch around E5
+                    const harmonics = [
+                        { mult: 1.0, gain: 0.35, decay: 0.85 },  // Fundamental
+                        { mult: 2.0, gain: 0.20, decay: 0.60 },  // Octave harmonic
+                        { mult: 2.76, gain: 0.12, decay: 0.45 }, // Metallic overtone 1
+                        { mult: 4.0, gain: 0.08, decay: 0.30 }   // High shimmer overtone
+                    ];
+
+                    harmonics.forEach(h => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(pitch * h.mult, now);
+
+                        gain.gain.setValueAtTime(0, now);
+                        gain.gain.linearRampToValueAtTime(h.gain, now + 0.008); // Sharp metallic attack
+                        gain.gain.exponentialRampToValueAtTime(0.0001, now + h.decay);
+
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now);
+                        osc.stop(now + h.decay);
+                    });
+                } else if (toneType === 'synth') {
+                    playFrequency(220, 'square', 0, 0.08, 0.2);
+                    playFrequency(440, 'square', 0.08, 0.08, 0.2);
+                    playFrequency(880, 'square', 0.16, 0.15, 0.2);
+                } else if (toneType === 'drop') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(900, now);
+                    osc.frequency.exponentialRampToValueAtTime(250, now + 0.2);
+                    gain.gain.setValueAtTime(0.5, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                    playFrequency(1046.5, 'sine', 0.1, 0.25, 0.25);
+                } else if (toneType === 'marimba') {
+                    playFrequency(392.00, 'triangle', 0, 0.25, 0.4);
+                    playFrequency(523.25, 'triangle', 0.08, 0.25, 0.4);
+                    playFrequency(659.25, 'triangle', 0.16, 0.35, 0.4);
+                } else if (toneType === 'fanfare') {
+                    // Varied Fanfare with slight timing offsets, pitch variance, and mixed waveforms
+                    const pitchShift = (Math.random() * 2 - 1) * 6; // +/- 6 Hz
+                    const notes = [
+                        { freq: 261.63 + pitchShift, time: 0, duration: soundJitter(0.12, 0.1) },     // C4
+                        { freq: 329.63 + pitchShift, time: soundJitter(0.11, 0.08), duration: soundJitter(0.12, 0.1) },   // E4
+                        { freq: 392.00 + pitchShift, time: soundJitter(0.23, 0.08), duration: soundJitter(0.12, 0.1) },   // G4
+                        { freq: 523.25 + pitchShift, time: soundJitter(0.35, 0.08), duration: soundJitter(0.45, 0.1) }    // C5
+                    ];
+
+                    notes.forEach(note => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = Math.random() > 0.5 ? 'triangle' : 'sawtooth';
+                        osc.frequency.setValueAtTime(note.freq, now + note.time);
+
+                        gain.gain.setValueAtTime(0, now + note.time);
+                        gain.gain.linearRampToValueAtTime(0.25, now + note.time + 0.02);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + note.time + note.duration);
+
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + note.time);
+                        osc.stop(now + note.time + note.duration);
+                    });
+                } else if (toneType === 'cosmic') {
+                    // Varied Cosmic Shimmer: multi-tone arpeggiation with randomized delays and pitch modulation
+                    const chord = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+                    const shimmerCount = 6 + Math.floor(Math.random() * 3); // 6 to 8 arpeggiated tones
+
+                    for (let i = 0; i < shimmerCount; i++) {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        
+                        const toneFreq = soundJitter(chord[i % chord.length], 0.05);
+                        const startTime = soundJitter(i * 0.06, 0.12);
+                        const duration = soundJitter(0.38, 0.1);
+
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(toneFreq, now + startTime);
+                        osc.frequency.exponentialRampToValueAtTime(toneFreq * 1.06, now + startTime + duration);
+
+                        gain.gain.setValueAtTime(0, now + startTime);
+                        gain.gain.linearRampToValueAtTime(0.15, now + startTime + 0.04);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, now + startTime + duration);
+
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+
+                        osc.start(now + startTime);
+                        osc.stop(now + startTime + duration);
+                    }
+                } else if (toneType === 'echo') {
+                    // Soothing Ocean Ripple: Cascading liquid droplets + lowpass warm water swell
+                    const rippleCount = 3 + Math.floor(Math.random() * 2); // 3-4 gentle liquid drops
+                    const basePitches = [680, 820, 540, 750];
+
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(1500, now);
+                    filter.connect(ctx.destination);
+
+                    for (let i = 0; i < rippleCount; i++) {
+                        const dropNow = now + (i * soundJitter(0.12, 0.15));
+                        const dropFreq = soundJitter(basePitches[i % basePitches.length], 0.08);
+                        const dur = soundJitter(0.24, 0.1);
+
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+
+                        // Droplet pitch curve
+                        osc.frequency.setValueAtTime(dropFreq, dropNow);
+                        osc.frequency.exponentialRampToValueAtTime(dropFreq * 0.6, dropNow + dur);
+
+                        gain.gain.setValueAtTime(0, dropNow);
+                        gain.gain.linearRampToValueAtTime(0.22, dropNow + 0.012);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, dropNow + dur);
+
+                        osc.connect(gain);
+                        gain.connect(filter);
+
+                        osc.start(dropNow);
+                        osc.stop(dropNow + dur);
+                    }
+                } else {
+                    playFrequency(587.33, 'sine', 0, 0.4, 0.3);
+                    playFrequency(880, 'sine', 0.12, 0.5, 0.3);
+                }
+            } catch (e) {
+                console.warn("Web Audio API warning:", e);
+            }
+        }
+
+        function playTestSound() {
+            const soundSelect = document.getElementById('selectNotifSound');
+            if (soundSelect) playSynthesizedSound(soundSelect.value);
+        }
+
+        function applyCustomizations() {
+            checkWeeklyAdExpiration();
+
+            const bgVal = bgGradients[customizations.bgGradient] || bgGradients.aero;
+            document.body.style.background = bgVal;
+            document.body.style.backgroundAttachment = 'fixed';
+
+            const wTheme = waterGradients[customizations.waterColor] || waterGradients.default;
+            const waveWrapper = document.getElementById('waveWrapper');
+            const waveFront = document.getElementById('waveFront');
+            const waveBack = document.getElementById('waveBack');
+
+            if (waveWrapper) waveWrapper.style.background = wTheme.gradient;
+            if (waveFront) {
+                waveFront.style.backgroundImage = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 88.7'%3E%3Cpath d='M800 56.9c-155.5 0-204.9-50-405.5-49.9-200 0-250 49.9-394.5 49.9v31.8h800v-31.8z' fill='${wTheme.waveHex}'/%3E%3C/svg%3E")`;
+            }
+            if (waveBack) {
+                waveBack.style.backgroundImage = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 88.7'%3E%3Cpath d='M800 56.9c-155.5 0-204.9-50-405.5-49.9-200 0-250 49.9-394.5 49.9v31.8h800v-31.8z' fill='${wTheme.backHex}'/%3E%3C/svg%3E")`;
+            }
+
+            const selectBg = document.getElementById('selectBgGradient');
+            const selectWater = document.getElementById('selectWaterColor');
+            const selectSound = document.getElementById('selectNotifSound');
+
+            if (selectBg) selectBg.value = customizations.bgGradient;
+            if (selectWater) selectWater.value = customizations.waterColor;
+            if (selectSound) selectSound.value = customizations.notifSound;
+
+            updateAdPassUI();
+        }
+
+        function updateAdPassUI() {
+            const bgAdBanner = document.getElementById('rewardBgAdBanner');
+            const bgGradientContainer = document.getElementById('bgGradientContainer');
+            if (bgAdBanner && bgGradientContainer) {
+                bgAdBanner.style.display = customizations.bgUnlocked ? 'none' : 'block';
+                bgGradientContainer.style.display = customizations.bgUnlocked ? 'block' : 'none';
+            }
+
+            const waterAdBanner = document.getElementById('rewardWaterAdBanner');
+            const waterColorContainer = document.getElementById('waterColorContainer');
+            if (waterAdBanner && waterColorContainer) {
+                waterAdBanner.style.display = customizations.waterUnlocked ? 'none' : 'block';
+                waterColorContainer.style.display = customizations.waterUnlocked ? 'block' : 'none';
+            }
+
+            const soundAdBanner = document.getElementById('rewardSoundAdBanner');
+            const notifSoundContainer = document.getElementById('notifSoundContainer');
+            if (soundAdBanner && notifSoundContainer) {
+                soundAdBanner.style.display = customizations.soundUnlocked ? 'none' : 'block';
+                notifSoundContainer.style.display = customizations.soundUnlocked ? 'block' : 'none';
+            }
+        }
+
+        function handleThemeChange(targetType) {
+            if (targetType === 'sound') {
+                const selectSound = document.getElementById('selectNotifSound');
+                if (selectSound && selectSound.value !== 'chime' && !customizations.soundUnlocked) {
+                    alert("Please watch a short sponsor video to unlock custom notification sounds for 7 days!");
+                    applyCustomizations();
+                    return;
+                }
+                if (selectSound) customizations.notifSound = selectSound.value;
+            } else if (targetType === 'bg') {
+                const selectBg = document.getElementById('selectBgGradient');
+                if (selectBg && selectBg.value !== 'aero' && !customizations.bgUnlocked) {
+                    alert("Please watch a short sponsor video to unlock custom background gradients for 7 days!");
+                    applyCustomizations();
+                    return;
+                }
+                if (selectBg) customizations.bgGradient = selectBg.value;
+            } else if (targetType === 'water') {
+                const selectWater = document.getElementById('selectWaterColor');
+                if (selectWater && selectWater.value !== 'default' && !customizations.waterUnlocked) {
+                    alert("Please watch a short sponsor video to unlock custom liquid water colors for 7 days!");
+                    applyCustomizations();
+                    return;
+                }
+                if (selectWater) customizations.waterColor = selectWater.value;
+            }
+
+            applyCustomizations();
+            saveCustomizations();
+        }
+
+        function saveCustomizations() {
+            localStorage.setItem('drinkme_customization', safeEncode(customizations));
+        }
+
+        // --- Rewarded Ad Engine ---
+        let adInterval = null;
+        let adSecondsLeft = 5;
+        let adTarget = 'bg';
+
+        function startRewardedAd(type = 'bg') {
+            adTarget = type;
+            toggleModal('rewardedAdModal', true);
+
+            adSecondsLeft = 5;
+            const progressFill = document.getElementById('adProgressFill');
+            const timerText = document.getElementById('adTimerText');
+            const closeBtn = document.getElementById('closeAdBtn');
+
+            if (progressFill) progressFill.style.width = '0%';
+            if (timerText) timerText.innerText = `Ad ends in: ${adSecondsLeft}s`;
+            if (closeBtn) {
+                closeBtn.disabled = true;
+                closeBtn.style.background = 'var(--slate-400)';
+                closeBtn.style.cursor = 'not-allowed';
+                closeBtn.innerText = `Watching Ad... (${adSecondsLeft}s)`;
+            }
+
+            if (adInterval) clearInterval(adInterval);
+
+            adInterval = setInterval(() => {
+                adSecondsLeft--;
+                const elapsed = 5 - adSecondsLeft;
+                const pct = (elapsed / 5) * 100;
+
+                if (progressFill) progressFill.style.width = `${pct}%`;
+
+                if (adSecondsLeft > 0) {
+                    if (timerText) timerText.innerText = `Ad ends in: ${adSecondsLeft}s`;
+                    if (closeBtn) closeBtn.innerText = `Watching Ad... (${adSecondsLeft}s)`;
+                } else {
+                    clearInterval(adInterval);
+                    if (timerText) timerText.innerText = `Reward Ready! 🎉`;
+                    if (closeBtn) {
+                        closeBtn.disabled = false;
+                        closeBtn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+                        closeBtn.style.cursor = 'pointer';
+                        closeBtn.innerText = `Claim Reward & Unlock!`;
+                    }
+                }
+            }, 1000);
+        }
+
+        function completeRewardedAd() {
+            const now = Date.now();
+
+            if (adTarget === 'sound') {
+                customizations.soundUnlocked = true;
+                customizations.soundUnlockedTime = now;
+            } else if (adTarget === 'bg') {
+                customizations.bgUnlocked = true;
+                customizations.bgUnlockedTime = now;
+            } else if (adTarget === 'water') {
+                customizations.waterUnlocked = true;
+                customizations.waterUnlockedTime = now;
+            } else if (adTarget === '14day') {
+                history14Unlocked = true;
+            }
+
+            saveCustomizations();
+            toggleModal('rewardedAdModal', false);
+            
+            confetti({ particleCount: 40, spread: 60, origin: { y: 0.6 } });
+
+            if (adTarget === '14day') {
+                adTarget = 'bg';
+                setTimeout(() => {
+                    scrollToTab(2);
+                    switchStreakTab(14);
+                }, 300);
+            } else {
+                setTimeout(() => {
+                    scrollToTab(3);
+                    const accordion = document.getElementById('customizationAccordion');
+                    if (accordion) accordion.open = true;
+                    applyCustomizations();
+                }, 300);
+            }
+        }
+
+        // --- State Management ---
+        let selectedHistoryDate = '';
+        let currentWaterMl = 0;
+        let lastLoggedMl = 0;
+        let goalMl = 1900;
+        let currentUnit = 'oz';
+        let btnAmountsMl = [30, 240, 750];
+        let streakCount = 0;
+        let lastDate = '';
+        let lastStreakDate = ''; 
+        let isCelebrating = false;
+        let desktopNotificationsEnabled = false;
+        let mobileNotificationPreference = true;
+
+        let historyLog = {}; 
+        let streakChartInstance = null;
+        let currentHistoryDays = 7;
+        let history14Unlocked = false;
+
+        let dailyReminders = { active: false, frequency: 60, amount: 250, start: "09:00", end: "18:00", repeat: true, lastTriggered: 0 };
+        let workoutReminders = { active: false, start: 0, end: 0, interval: 15, intAmt: 150, preAmt: 300, postAmt: 500, preDone: false, postDone: false, lastInt: 0 };
+
+        const CONV = { oz: 0.033814, cups: 0.004 };
+        const REV = { oz: 29.5735, cups: 250 };
+
+        function convert(ml) {
+            if (currentUnit === 'ml') return Math.round(ml);
+            if (currentUnit === 'cups') return Math.ceil(ml * CONV.cups);
+            return parseFloat((ml * CONV[currentUnit]).toFixed(0));
+        }
+
+        function toMl(val) {
+            if (val === "" || val === undefined || val === null) return 0;
+            if (currentUnit === 'ml') return parseFloat(val);
+            return parseFloat(val) * REV[currentUnit];
+        }
+
+        function updateUI() {
+            const safeGoal = goalMl > 0 ? goalMl : 2500; 
+            const perc = Math.min(Math.floor((currentWaterMl / safeGoal) * 100), 100);
+            
+            document.getElementById('waveWrapper').style.height = perc + '%';
+            document.getElementById('percentDisplay').innerText = perc + '%';
+            document.getElementById('statDisplay').innerText = `${convert(currentWaterMl)} / ${convert(goalMl)} ${currentUnit.toUpperCase()}`;
+            
+            document.getElementById('woActive').style.display = workoutReminders.active ? 'block' : 'none';
+            document.getElementById('remActiveBadge').style.display = dailyReminders.active ? 'block' : 'none';
+
+            const circle = document.getElementById('circleFrame');
+            if (workoutReminders.active) circle.style.borderColor = '#f97316';
+            else if (dailyReminders.active) circle.style.borderColor = '#14b8a6';
+            else circle.style.borderColor = 'white';
+
+            const streakCountEl = document.getElementById('streakCount');
+            if (streakCountEl) streakCountEl.innerText = `${streakCount} Day Streak`;
+            
+            const streakBadgeEl = document.getElementById('streakBadge');
+            if (streakBadgeEl) {
+                if (streakCount > 0) streakBadgeEl.classList.add('visible');
+                else streakBadgeEl.classList.remove('visible');
+            }
+
+            const remBadge = document.getElementById('remTabBadge');
+            if (remBadge) remBadge.style.display = dailyReminders.active ? 'block' : 'none';
+
+            document.getElementById('labelBtn1').innerText = convert(btnAmountsMl[0]) + (currentUnit === 'cups' ? 'c' : currentUnit);
+            document.getElementById('labelBtn2').innerText = convert(btnAmountsMl[1]) + (currentUnit === 'cups' ? 'c' : currentUnit);
+        }
+
+        function updateHistory() {
+            const today = new Date().toDateString();
+            if (currentWaterMl > 0) {
+                historyLog[today] = { amount: currentWaterMl, goal: goalMl, met: currentWaterMl >= goalMl };
+            } else {
+                delete historyLog[today];
+            }
+
+            const keys = Object.keys(historyLog);
+            if (keys.length > 31) { 
+                keys.sort((a,b) => new Date(a) - new Date(b));
+                while(keys.length > 30) {
+                    const k = keys.shift();
+                    delete historyLog[k];
+                }
+            }
+        }
+
+        function addWater(ml) {
+            if (isCelebrating) return;
+            lastLoggedMl = ml;
+            currentWaterMl += ml;
+            updateHistory();
+
+            if (currentWaterMl >= goalMl) {
+                celebrate();
+            } else {
+                save();
+                updateUI();
+            }
+        }
+
+        function undoLastSip() {
+            if (lastLoggedMl <= 0 || currentWaterMl <= 0) return;
+            currentWaterMl = Math.max(0, currentWaterMl - lastLoggedMl);
+            lastLoggedMl = 0;
+            updateHistory();
+            recalculateStreaks();
+            save();
+            updateUI();
+        }
+
+        function addWaterFromBtn(i) { addWater(btnAmountsMl[i]); }
+
+        function celebrate() {
+            isCelebrating = true;
+            updateUI(); 
+
+            const end = Date.now() + 1500;
+            const colors = ['#3b82f6', '#ffffff', '#60a5fa'];
+
+            (function frame() {
+                confetti({ particleCount: 2, angle: 60, spread: 45, origin: { x: 0, y: 0.65 }, colors: colors });
+                confetti({ particleCount: 2, angle: 120, spread: 45, origin: { x: 1, y: 0.65 }, colors: colors });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+
+            const today = new Date().toDateString();
+            if (lastDate !== today) {
+                streakCount++;
+                lastDate = today;
+                lastStreakDate = today;
+            }
+
+            setTimeout(() => {
+                isCelebrating = false;
+                save();
+                updateUI();
+            }, 2500);
+        }
+
+        function triggerAlert(title, msg, amt) {
+            document.getElementById('remTitle').innerText = title;
+            document.getElementById('remMsg').innerText = msg;
+            document.getElementById('remConfirmBtn').onclick = () => {
+                addWater(amt);
+                toggleModal('activeReminderModal', false);
+            };
+            toggleModal('activeReminderModal', true);
+
+            playSynthesizedSound(customizations.notifSound);
+            showBackgroundNotification(title, msg, amt);
+        }
+
+        function syncNotificationToggleUI() {
+            const toggle = document.getElementById('desktopNotifToggle');
+            if (!toggle) return;
+
+            toggle.checked = mobileNotificationPreference;
+
+            if (!toggle.dataset.bound) {
+                toggle.addEventListener('change', () => {
+                    mobileNotificationPreference = toggle.checked;
+                    localStorage.setItem('drinkme_notification_toggle', String(mobileNotificationPreference));
+                });
+                toggle.dataset.bound = 'true';
+            }
+        }
+
+        function updateNotificationStatusUI() {
+            const statusText = document.getElementById('notifStatusText');
+            const requestBtn = document.getElementById('notifRequestBtn');
+            if (!statusText || !requestBtn) return;
+
+            if (!("Notification" in window)) {
+                statusText.innerText = "Unsupported";
+                statusText.style.color = "#ef4444";
+                requestBtn.style.display = "none";
+                return;
+            }
+
+            if (Notification.permission === "granted") {
+                statusText.innerText = "Active";
+                statusText.style.color = "#22c55e";
+                requestBtn.innerText = "Test Alert";
+                requestBtn.style.background = "var(--blue-100)";
+                requestBtn.style.color = "var(--blue-600)";
+                requestBtn.onclick = () => showBackgroundNotification("Drink Me! 💧", "Awesome! System notifications are set up correctly.", dailyReminders.amount || 250);
+            } else if (Notification.permission === "denied") {
+                statusText.innerText = "Blocked";
+                statusText.style.color = "#ef4444";
+                requestBtn.innerText = "How to Fix";
+                requestBtn.style.background = "#fee2e2";
+                requestBtn.style.color = "#ef4444";
+                requestBtn.onclick = () => alert("Notifications are blocked by your browser settings.");
+            } else {
+                statusText.innerText = "Not Enabled";
+                statusText.style.color = "#eab308";
+                requestBtn.innerText = "Enable";
+                requestBtn.style.background = "var(--blue-500)";
+                requestBtn.style.color = "white";
+                requestBtn.onclick = requestSystemNotificationPermission;
+            }
+        }
+
+        function requestSystemNotificationPermission() {
+            if (!("Notification" in window)) return;
+            try {
+                Notification.requestPermission().then(permission => {
+                    updateNotificationStatusUI();
+                    if (permission === "granted") {
+                        desktopNotificationsEnabled = true;
+                        save();
+                    } else {
+                        desktopNotificationsEnabled = false;
+                        save();
+                        toggleModal('sandboxWarningModal', true);
+                    }
+                }).catch(() => toggleModal('sandboxWarningModal', true));
+            } catch (e) {
+                toggleModal('sandboxWarningModal', true);
+            }
+        }
+
+        function showBackgroundNotification(title, message, amt) {
+            if (!("Notification" in window) || Notification.permission !== "granted") return;
+            const options = {
+                body: message || 'Time to drink water!',
+                icon: './img/brand.png',
+                vibrate: [100, 50, 100],
+                tag: 'hydration-reminder'
+            };
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then((reg) => reg.showNotification(title || 'Hydration Time! 💧', options));
+            }
+        }
+
+        // --- Reminders Engine ---
+        function startDailyReminders() {
+            dailyReminders.frequency = parseInt(document.getElementById('remFreq').value);
+            dailyReminders.amount = toMl(document.getElementById('remAmt').value);
+            dailyReminders.start = document.getElementById('remStart').value || "09:00";
+            dailyReminders.end = document.getElementById('remEnd').value || "18:00";
+            dailyReminders.repeat = document.getElementById('remRepeat').checked;
+            dailyReminders.active = true;
+            dailyReminders.lastTriggered = Date.now();
+            saveReminders();
+            updateUI();
+
+            if ("Notification" in window && Notification.permission === "default") {
+                requestSystemNotificationPermission();
+            }
+        }
+
+        function stopDailyReminders() {
+            dailyReminders.active = false;
+            saveReminders();
+            updateUI();
+        }
+
+        function checkReminders() {
+            if (dailyReminders.active) {
+                const now = new Date();
+                const nowMins = now.getHours() * 60 + now.getMinutes();
+
+                if (dailyReminders.start && dailyReminders.end) {
+                    const [sh, sm] = dailyReminders.start.split(':').map(Number);
+                    const [eh, em] = dailyReminders.end.split(':').map(Number);
+                    const startMins = sh * 60 + sm;
+                    const endMins = eh * 60 + em;
+
+                    if (nowMins < startMins || nowMins > endMins) return;
+                }
+
+                const elapsed = (Date.now() - dailyReminders.lastTriggered) / 60000;
+                if (elapsed >= dailyReminders.frequency) {
+                    dailyReminders.lastTriggered = Date.now();
+                    saveReminders(); 
+                    const amtText = `${convert(dailyReminders.amount)}${currentUnit.toUpperCase()}`;
+                    triggerAlert("Time to Hydrate! 💧", `Time to drink your scheduled water: ${amtText}`, dailyReminders.amount);
+                }
+            }
+        }
+
+        // --- Streak & History Functions ---
+        function updateStreakTabUI() {
+            const btn7 = document.getElementById('streakTab7');
+            const btn14 = document.getElementById('streakTab14');
+            if (btn7) btn7.classList.toggle('active', currentHistoryDays === 7);
+            if (btn14) {
+                btn14.classList.toggle('active', currentHistoryDays === 14);
+                btn14.innerText = (history14Unlocked || customizations.bgUnlocked || customizations.waterUnlocked) ? "14 Days ✨" : "14 Days 🎬";
+            }
+        }
+
+        function switchStreakTab(days) {
+            if (days === 7) {
+                currentHistoryDays = 7;
+                updateStreakTabUI();
+                renderStreakChart();
+            } else if (days === 14) {
+                if (history14Unlocked || customizations.bgUnlocked || customizations.waterUnlocked) {
+                    currentHistoryDays = 14;
+                    updateStreakTabUI();
+                    renderStreakChart();
+                } else {
+                    startRewardedAd('14day');
+                }
+            }
+        }
+
+        function renderStreakChart() {
+            if (typeof Chart === 'undefined') return;
+
+            let sMax = 3000;
+            if (currentUnit === 'oz') sMax = 100;
+            else if (currentUnit === 'cups') sMax = 12;
+
+            const ctx = document.getElementById('streakChart').getContext('2d');
+            const dates = Object.keys(historyLog).sort((a,b) => new Date(a) - new Date(b)).slice(-currentHistoryDays);
+            
+            const labels = dates.map(d => {
+                const date = new Date(d);
+                return `${date.getMonth()+1}/${date.getDate()}`;
+            });
+            const dataPoints = dates.map(d => convert(historyLog[d].amount));
+            const goalPoints = dates.map(d => convert(historyLog[d].goal));
+
+            if (streakChartInstance) streakChartInstance.destroy();
+
+            streakChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: `Intake (${currentUnit.toUpperCase()})`,
+                            data: dataPoints,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                            borderWidth: 2.5,
+                            pointBackgroundColor: '#ffffff',
+                            pointBorderColor: '#3b82f6',
+                            pointRadius: 8, 
+                            fill: true,
+                            tension: 0.1
+                        },
+                        {
+                            label: "Goal",
+                            data: goalPoints,
+                            borderColor: '#f59e0b',
+                            borderWidth: 3,
+                            borderDash: [4, 4],
+                            pointRadius: 0,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (event, elements) => {
+                        if (elements && elements.length > 0) {
+                            const clickedIndex = elements[0].index;
+                            const clickedDate = dates[clickedIndex];
+                            const entry = historyLog[clickedDate];
+                            if (entry) showHistoryEditor(clickedDate, entry.amount);
+                        }
+                    },
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, suggestedMax: sMax },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            const trackingText = document.getElementById('streakTrackingText');
+            if (trackingText) trackingText.innerText = `Tracking last ${currentHistoryDays} days of hydration.`;
+        }
+
+        function showHistoryEditor(dateStr, currentAmountMl) {
+            selectedHistoryDate = dateStr;
+            const readableDate = new Date(dateStr).toLocaleDateString('en', { month: 'short', day: 'numeric' });
+            
+            document.getElementById('editHistoryDateLabel').innerText = readableDate;
+            document.getElementById('editHistoryInput').value = convert(currentAmountMl);
+            document.getElementById('editHistoryArea').style.display = 'block';
+        }
+
+        function submitHistoryEdit() {
+            const rawVal = document.getElementById('editHistoryInput').value;
+            const parsedVal = parseFloat(rawVal);
+            if (isNaN(parsedVal) || parsedVal < 0) return;
+            
+            const newAmountMl = toMl(parsedVal);
+            const todayStr = new Date().toDateString();
+
+            if (selectedHistoryDate && historyLog[selectedHistoryDate]) {
+                if (newAmountMl === 0) {
+                    delete historyLog[selectedHistoryDate];
+                } else {
+                    historyLog[selectedHistoryDate].amount = newAmountMl;
+                    historyLog[selectedHistoryDate].met = newAmountMl >= historyLog[selectedHistoryDate].goal;
+                }
+
+                if (selectedHistoryDate === todayStr) currentWaterMl = newAmountMl;
+
+                recalculateStreaks();
+                save();
+                updateUI();
+                renderStreakChart();
+
+                document.getElementById('editHistoryArea').style.display = 'none';
+            }
+        }
+
+        function recalculateStreaks() {
+            const sortedDates = Object.keys(historyLog).sort((a,b) => new Date(a) - new Date(b));
+            let currentStreak = 0;
+            let lastMetDateString = '';
+
+            for (let d of sortedDates) {
+                if (historyLog[d].met) {
+                    currentStreak++;
+                    lastMetDateString = d;
+                } else {
+                    currentStreak = 0; 
+                }
+            }
+
+            streakCount = currentStreak;
+            lastDate = lastMetDateString;
+            lastStreakDate = lastMetDateString;
+        }
+
+        // --- Modals & Settings ---
+        function toggleModal(id, show) {
+            const m = document.getElementById(id);
+            if (!m) return;
+            if (show) m.classList.add('active');
+            else m.classList.remove('active');
+        }
+
+        function saveSettings() {
+            const gVal = document.getElementById('goalInput').value;
+            const b1Val = document.getElementById('b1').value;
+            const b2Val = document.getElementById('b2').value;
+
+            if(gVal === "" || b1Val === "" || b2Val === "") {
+                alert("Please fill in all fields before saving.");
+                return;
+            }
+
+            const newGoal = toMl(gVal);
+            const newB1 = toMl(b1Val);
+            const newB2 = toMl(b2Val);
+
+            if(isNaN(newGoal) || isNaN(newB1)) {
+                alert("Invalid numbers.");
+                return;
+            }
+
+            goalMl = newGoal;
+            btnAmountsMl = [newB1, newB2, btnAmountsMl[2] || 750];
+            updateHistory();
+            save(); 
+            updateUI(); 
+            alert("Settings saved successfully!");
+        }
+
+        function setUnit(u) {
+            currentUnit = u;
+            document.querySelectorAll('.unit-btn').forEach(b => b.classList.toggle('active', b.id === 'unit' + u.charAt(0).toUpperCase() + u.slice(1)));
+            document.querySelectorAll('.unit-text').forEach(t => t.innerText = u);
+            
+            document.getElementById('goalInput').value = convert(goalMl);
+            document.getElementById('b1').value = convert(btnAmountsMl[0]);
+            document.getElementById('b2').value = convert(btnAmountsMl[1]);
+
+            updateUI();
+            save(); 
+        }
+
+        function resetProgress() { 
+            currentWaterMl = 0; 
+            lastLoggedMl = 0;
+            isCelebrating = false;
+            updateHistory();
+            updateUI(); 
+            save(); 
+            toggleModal('resetModal', false); 
+        }
+
+        function safeEncode(data) { return btoa(encodeURIComponent(JSON.stringify(data))); }
+        function safeDecode(data) {
+            try { return JSON.parse(decodeURIComponent(atob(data))); }
+            catch (e) {
+                try { return JSON.parse(data); }
+                catch (e2) { return null; }
+            }
+        }
+
+        function save() { 
+            const todayStr = new Date().toDateString();
+            localStorage.setItem('drinkme_state', safeEncode({ 
+                currentWaterMl, lastLoggedMl, goalMl, currentUnit, btnAmountsMl, streakCount, lastDate, lastStreakDate,
+                lastLogDate: todayStr, desktopNotificationsEnabled 
+            })); 
+            localStorage.setItem('drinkme_history', safeEncode(historyLog));
+            saveCustomizations();
+        }
+
+        function saveReminders() { 
+            localStorage.setItem('drinkme_reminders', safeEncode(dailyReminders)); 
+        }
+
+        // --- Initialization ---
+        const savedData = localStorage.getItem('drinkme_state');
+        const todayStr = new Date().toDateString();
+        const isFirstTimeUser = !savedData;
+
+        const savedHistory = localStorage.getItem('drinkme_history');
+        if (savedHistory) historyLog = safeDecode(savedHistory) || {};
+
+        const savedCustom = localStorage.getItem('drinkme_customization');
+        if (savedCustom) {
+            const parsedCustom = safeDecode(savedCustom);
+            if (parsedCustom) customizations = { ...customizations, ...parsedCustom };
+        }
+
+        if (savedData) {
+            const s = safeDecode(savedData) || {};
+            lastDate = s.lastDate || '';
+            lastStreakDate = s.lastStreakDate || '';
+            const lastLogDate = s.lastLogDate || lastDate || '';
+            
+            currentWaterMl = (lastLogDate === todayStr) ? (s.currentWaterMl || 0) : 0;
+            lastLoggedMl = s.lastLoggedMl || 0;
+            goalMl = s.goalMl || 2500;
+            currentUnit = s.currentUnit || 'ml';
+            btnAmountsMl = s.btnAmountsMl || [250, 500, 750];
+            streakCount = s.streakCount || 0;
+            desktopNotificationsEnabled = s.desktopNotificationsEnabled || false;
+        }
+
+        const savedRem = localStorage.getItem('drinkme_reminders');
+        if (savedRem) {
+            const parsedRem = safeDecode(savedRem);
+            if (parsedRem) dailyReminders = parsedRem;
+        }
+
+        setUnit(currentUnit);
+        applyCustomizations();
+        showSlides(slideIndex);
+        setInterval(checkReminders, 15000);
+        setInterval(rotateAds, 12000); 
+        updateUI();
+        updateNotificationStatusUI();
+        syncNotificationToggleUI();
+
+        // Populate Form Controls for Settings and Reminders Tab
+        document.getElementById('remFreq').value = dailyReminders.frequency;
+        document.getElementById('remAmt').value = convert(dailyReminders.amount);
+        document.getElementById('remStart').value = dailyReminders.start || "09:00";
+        document.getElementById('remEnd').value = dailyReminders.end || "18:00";
+        document.getElementById('remRepeat').checked = dailyReminders.repeat ?? true;
+        document.getElementById('goalInput').value = convert(goalMl);
+        document.getElementById('b1').value = convert(btnAmountsMl[0]);
+        document.getElementById('b2').value = convert(btnAmountsMl[1]);
+
+        if (isFirstTimeUser) {
+            toggleModal('infoModal', true);
+        }
+
+        if ('serviceWorker' in navigator) { 
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker Registered'))
+                    .catch(err => console.log('Service Worker Registration Failed', err));
+            });
+        }
+    </script>
+</body>
+</html>
