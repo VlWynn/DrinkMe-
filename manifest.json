@@ -3,6 +3,7 @@
   "short_name": "Drink Me!",
   "description": "A fun and interactive app to track your daily hydration, discover water recipes, and build healthy habits.",
   "start_url": "./index.html",
+  "id": "./index.html",
   "display": "standalone",
   "background_color": "#8af2c4",
   "theme_color": "#2a8f78",
