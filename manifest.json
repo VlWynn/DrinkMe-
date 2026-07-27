@@ -11,7 +11,7 @@
     {
       "src": "./img/brand.png?v=5",
       "type": "image/png",
-      "sizes": "192x192",
+      "sizes": "512x512",
       "purpose": "any"
     },
     {
@@ -23,21 +23,21 @@
     {
       "src": "./img/brand.png?v=5",
       "type": "image/png",
-      "sizes": "1024x1024",
+      "sizes": "512x512",
       "purpose": "maskable"
     }
   ],
   "screenshots": [
     {
-      "src": "./img/tip1.PNG",
-      "sizes": "727x822",
+      "src": "./img/overview.PNG",
+      "sizes": "499x794",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Mobile View of Hydration Tracker"
     },
     {
-      "src": "./img/tip1.PNG",
-      "sizes": "727x822",
+      "src": "./img/overview.PNG",
+      "sizes": "499x794",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Desktop View of Hydration Tracker"
