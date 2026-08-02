@@ -783,7 +783,6 @@
         /* Greyed-out tab styling */
         .tab-btn.disabled-pro-tab {
             opacity: 0.5;
-            filter: grayscale(100%);
             cursor: pointer;
             position: relative;
         }
@@ -793,7 +792,7 @@
             position: absolute;
             top: 2px;
             right: 6px;
-            background-color: #f39c12;
+            background-color: #ff0000;
             color: #fff;
             font-size: 8px;
             font-weight: bold;
@@ -2164,18 +2163,26 @@ function playSynthesizedSound(toneType) {
 
         function requestSystemNotificationPermission() {
             if (!("Notification" in window)) return;
+
+            const finalizePermission = (permission) => {
+                updateNotificationStatusUI();
+                if (permission === "granted") {
+                    desktopNotificationsEnabled = true;
+                    save();
+                } else {
+                    desktopNotificationsEnabled = false;
+                    save();
+                    toggleModal('sandboxWarningModal', true);
+                }
+            };
+
             try {
-                Notification.requestPermission().then(permission => {
-                    updateNotificationStatusUI();
-                    if (permission === "granted") {
-                        desktopNotificationsEnabled = true;
-                        save();
-                    } else {
-                        desktopNotificationsEnabled = false;
-                        save();
-                        toggleModal('sandboxWarningModal', true);
-                    }
-                }).catch(() => toggleModal('sandboxWarningModal', true));
+                const permissionResult = Notification.requestPermission();
+                if (permissionResult && typeof permissionResult.then === 'function') {
+                    permissionResult.then(finalizePermission).catch(() => toggleModal('sandboxWarningModal', true));
+                } else {
+                    finalizePermission(permissionResult || Notification.permission);
+                }
             } catch (e) {
                 toggleModal('sandboxWarningModal', true);
             }
@@ -2183,15 +2190,49 @@ function playSynthesizedSound(toneType) {
 
         function showBackgroundNotification(title, message, amt) {
             if (!("Notification" in window) || Notification.permission !== "granted") return;
-            const options = {
+
+            const titleText = title || 'Hydration Time! 💧';
+            const reminderAmount = Number(amt) || dailyReminders.amount || 250;
+            const baseOptions = {
                 body: message || 'Time to drink water!',
                 icon: './img/brand.png',
-                vibrate: [100, 50, 100],
-                tag: 'hydration-reminder'
+                tag: 'hydration-reminder',
+                data: {
+                    url: './index.html',
+                    amt: reminderAmount
+                },
+                actions: [
+                    { action: 'log_water', title: '💧 Log Water' },
+                    { action: 'skip_reminder', title: '⏭️ Cancel' }
+                ]
             };
+            const workerOptions = {
+                ...baseOptions,
+                vibrate: [100, 50, 100]
+            };
+
+            const fallbackToPageNotification = () => {
+                try {
+                    new Notification(titleText, baseOptions);
+                } catch (error) {
+                    console.warn('Unable to show fallback desktop notification:', error);
+                }
+            };
+
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.ready.then((reg) => reg.showNotification(title || 'Hydration Time! 💧', options));
+                navigator.serviceWorker.ready
+                    .then((reg) => {
+                        if (reg && typeof reg.showNotification === 'function') {
+                            reg.showNotification(titleText, workerOptions);
+                        } else {
+                            fallbackToPageNotification();
+                        }
+                    })
+                    .catch(() => fallbackToPageNotification());
+                return;
             }
+
+            fallbackToPageNotification();
         }
 
         // --- Reminders Engine ---
